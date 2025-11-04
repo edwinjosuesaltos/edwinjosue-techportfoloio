@@ -1,4 +1,4 @@
-# 👋 ¡Hola! Soy Josue  
+# 👋 ¡Hola! Soy Edwin  
 
 💻 **Profesional y estudiante de TI | Entusiasta de Networkin-Systemas y la Nube | Explorador de la CIBERSEGURIDAD**
 
