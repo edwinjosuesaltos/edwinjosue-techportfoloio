@@ -127,3 +127,92 @@ line vty 0 4
 ```
 
 <img width="4480" height="1440" alt="image" src="https://github.com/user-attachments/assets/d7fe8f6f-bee3-4ffa-9e50-b0a831b17275" />
+
+# 🚀LAB 02 Segmented Corporate Network Implementation (VLSM & Inter-VLAN Routing)
+![Cisco Badge](https://img.shields.io/badge/Vendor-Cisco-blue?style=for-the-badge&logo=cisco) ![Lab Status](https://img.shields.io/badge/Status-Completed-success?style=for-the-badge) ![Type](https://img.shields.io/badge/Type-Routing%20%26%20Switching-orange?style=for-the-badge)
+
+## 📝 Project Overview
+This project demonstrates the design and deployment of a scalable corporate network infrastructure. Utilizing a **$172.16.0.0/16$** base network, I implemented a **Variable Length Subnet Masking (VLSM)** scheme to optimize IP address allocation. The environment was emulated using **EVE-NG Professional** with authentic **Cisco IOL (IOS on Linux)** images to ensure production-grade behavior.
+
+## 🎯 Key Objectives
+* **Efficient Addressing**: Minimize IP waste using VLSM calculations based on host requirements.
+* **Network Segmentation**: Deploy VLANs to isolate broadcast domains and enhance organizational security.
+* **Inter-VLAN Routing**: Implement a "Router-on-a-Stick" configuration via IEEE 802.1Q trunking.
+* **Secure Management**: Enforce SSHv2 and encrypted credentials for secure remote device administration.
+
+---
+
+## 🗺️ Network Topology
+The topology follows a hierarchical design consisting of a Core Router, a Distribution Switch, and multiple departmental Virtual PCs (VPCS).
+<img width="975" height="458" alt="image" src="https://github.com/user-attachments/assets/4d891cbf-9dc5-4d18-8a86-2a0f6d5a7f8e" />
+<img width="975" height="458" alt="image" src="https://github.com/user-attachments/assets/0b97d299-3ae4-48d9-97d1-978d345a1947" />
+<img width="975" height="993" alt="image" src="https://github.com/user-attachments/assets/8a4efd3e-f391-41e1-8f6e-34b571b66fcf" />
+<img width="975" height="735" alt="image" src="https://github.com/user-attachments/assets/271783bd-f7e9-444d-8009-e9d6904d6fdb" />
+<img width="975" height="546" alt="image" src="https://github.com/user-attachments/assets/7288352a-93ed-44c9-b52e-68cd7a8417c9" />
+<img width="975" height="594" alt="image" src="https://github.com/user-attachments/assets/4068ab31-a318-4716-bc3a-437b49501b69" />
+> **Note:**
+
+
+---
+
+## 🧮 VLSM Addressing Plan
+The network was segmented based on specific host requirements, prioritizing the largest subnets to maintain contiguous addressing and efficiency.
+
+| Department | VLAN | Required Hosts | Subnet ID | CIDR / Mask | Default Gateway |
+| :--- | :---: | :---: | :--- | :--- | :--- |
+| **Operations** | 10 | 500 | `172.16.0.0` | `/23` (255.255.254.0) | `172.16.0.1` |
+| **Guest WiFi** | 20 | 100 | `172.16.2.0` | `/25` (255.255.255.128) | `172.16.2.1` |
+| **Administration** | 30 | 50 | `172.16.2.128` | `/26` (255.255.255.192) | `172.16.2.129` |
+| **IT Management** | 99 | 10 | `172.16.2.192` | `/28` (255.255.255.240) | `172.16.2.193` |
+
+---
+
+## 🛠️ Configuration Highlights
+
+### 1. R1-CORE (Gateway & SSH Security)
+Configured with logical sub-interfaces for routing and hardened with RSA-2048 encryption for secure SSH access.
+
+```cisco
+! Management Security & SSHv2
+hostname R1-CORE
+ip domain-name enterprise.local
+username admin privilege 15 secret adminpass
+crypto key generate rsa (2048 bits)
+ip ssh version 2
+
+! Inter-VLAN Routing (Router-on-a-Stick)
+interface Ethernet0/0.10
+ description GW_OPERATIONS
+ encapsulation dot1Q 10
+ ip address 172.16.0.1 255.255.254.0
+
+interface Ethernet0/0.30
+ description GW_ADMINISTRATION
+ encapsulation dot1Q 30
+ ip address 172.16.2.129 255.255.255.192
+
+### 2. SW1-DIST (VLANs & Trunking) 
+Configured to manage broadcast domains and bridge departmental traffic to the Core Router using the 802.1Q standard.
+```cisco
+! VLAN Database Creation
+vlan 10
+ name Operations
+vlan 30
+ name Administration
+
+! Access Port Assignments
+interface Ethernet0/1
+ switchport mode access
+ switchport access vlan 10
+
+! 802.1Q Trunk Link
+interface Ethernet0/0
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ description TRUNK_TO_CORE
+```
+
+### 🧪 Verification & Proof of Concept
+Successful deployment was validated through the following technical checks:Inter-VLAN Connectivity: Confirmed via ICMP Echo Requests (ping) between PC-Operations ($172.16.0.10$) and PC-Administration ($172.16.2.140$).
+
+Routing Table Integrity: Verified using show ip route, confirming all VLSM subnets are correctly learned and reachable.Switchport Status: Verified via show vlan brief to ensure correct port-to-VLAN mapping.
